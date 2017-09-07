@@ -5,7 +5,7 @@ import Color
 import Element exposing (..)
 import Element.Attributes exposing (..)
 import Html exposing (Html)
-import Html.Events exposing (onClick)
+import Element.Events exposing (onClick)
 import Style exposing (..)
 import Style.Border as Border
 import Style.Color as Color
@@ -74,7 +74,7 @@ update : Msg -> Board -> Board
 update message board =
     case message of
         MarkCell pos mark ->
-            { board | currentBoardState = Array.fromList [ "", "", "", "", "", "", "", "", "", "" ] }
+            { board | currentBoardState = Array.set pos mark board.currentBoardState, turn = board.turn + 1 }
 
 
 stylesheet : StyleSheet Styles variation
@@ -114,33 +114,22 @@ stylesheet =
 {-| Our view is made up of `Element`s,
 which you can think of as Html with layout, positioning, and spacing built in.
 -}
-view : Board -> Html msg
 view board =
     Element.root stylesheet <|
-        column None
-            []
-            [ el None [ center, width (px 800) ] <|
-                column Main
-                    [ spacing 50, paddingTop 50, paddingBottom 50 ]
-                    (List.concat
-                        [ viewRowLayouts
-                        ]
-                    )
+        column Main
+            [ center, width (px 800), spacing 50, paddingTop 50, paddingBottom 50 ]
+            [ el Label [] (text "Elm Tic-Tac-Toe")
+            , el Label [] (text (toString board))
+            , wrappedRow None
+                [ spacingXY 10 10, center ]
+                [ el Box [ width (px 200), height (px 200), onClick (MarkCell 0 "X") ] empty
+                , el Box [ width (px 200), height (px 200), onClick (MarkCell 1 "O") ] empty
+                , el Box [ width (px 200), height (px 200), onClick (MarkCell 2 "O") ] empty
+                , el Box [ width (px 200), height (px 200), onClick (MarkCell 3 "O") ] empty
+                , el Box [ width (px 200), height (px 200), onClick (MarkCell 4 "O") ] empty
+                , el Box [ width (px 200), height (px 200), onClick (MarkCell 5 "O") ] empty
+                , el Box [ width (px 200), height (px 200), onClick (MarkCell 6 "O") ] empty
+                , el Box [ width (px 200), height (px 200), onClick (MarkCell 7 "O") ] empty
+                , el Box [ width (px 200), height (px 200), onClick (MarkCell 8 "O") ] empty
+                ]
             ]
-
-
-viewRowLayouts =
-    [ el Label [] (text "Elm Tic-Tac-Toe")
-    , wrappedRow None
-        [ spacingXY 10 10, center ]
-        [ el Box [ width (px 200), height (px 200) ] empty
-        , el Box [ width (px 200), height (px 200) ] empty
-        , el Box [ width (px 200), height (px 200) ] empty
-        , el Box [ width (px 200), height (px 200) ] empty
-        , el Box [ width (px 200), height (px 200) ] empty
-        , el Box [ width (px 200), height (px 200) ] empty
-        , el Box [ width (px 200), height (px 200) ] empty
-        , el Box [ width (px 200), height (px 200) ] empty
-        , el Box [ width (px 200), height (px 200) ] empty
-        ]
-    ]
