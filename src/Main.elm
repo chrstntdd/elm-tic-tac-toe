@@ -11,15 +11,10 @@ import Style.Border as Border
 import Style.Color as Color
 import Style.Font as Font
 import Style.Transition as Transition
-import String exposing (length)
+import String exposing (length, contains)
 
 
 -- Util functions
-
-
-isEven : Int -> Bool
-isEven n =
-    n % 2 == 0
 
 
 getMarkAt : Array.Array String -> Int -> String
@@ -55,14 +50,6 @@ isMarked array index =
 
         _ ->
             True
-
-
-repeatN : Int -> Int -> a -> List a
-repeatN start end x =
-    if start <= end then
-        []
-    else
-        x :: repeatN (start + 1) end x
 
 
 type Styles
@@ -125,28 +112,32 @@ type Msg
 
 update : Msg -> Board -> Board
 update message board =
-    case message of
-        MarkCell index mark ->
-            if String.contains mark "O" && length board.activePlayer == 1 then
-                { board
-                    | boardState = Array.set index mark board.boardState
-                    , turn = board.turn + 1
-                    , activePlayer = "X"
-                }
-            else if String.contains mark "X" && length board.activePlayer == 1 then
-                { board
-                    | boardState = Array.set index mark board.boardState
-                    , turn = board.turn + 1
-                    , activePlayer = "O"
-                }
-            else
-                { board | activePlayer = "" }
+    let
+        { activePlayer, boardState, turn } =
+            board
+    in
+        case message of
+            MarkCell index mark ->
+                if contains mark "O" && length activePlayer == 1 then
+                    { board
+                        | boardState = Array.set index mark boardState
+                        , turn = turn + 1
+                        , activePlayer = "X"
+                    }
+                else if contains mark "X" && length activePlayer == 1 then
+                    { board
+                        | boardState = Array.set index mark boardState
+                        , turn = turn + 1
+                        , activePlayer = "O"
+                    }
+                else
+                    { board | activePlayer = "" }
 
-        ChooseMark mark ->
-            { board | activePlayer = mark }
+            ChooseMark mark ->
+                { board | activePlayer = mark }
 
-        ResetBoard ->
-            initialModel
+            ResetBoard ->
+                initialModel
 
 
 stylesheet : StyleSheet Styles variation
@@ -189,7 +180,7 @@ which you can think of as Html with layout, positioning, and spacing built in.
 view : Board -> Html Msg
 view board =
     let
-        { boardState, activePlayer } =
+        { boardState, activePlayer, turn } =
             board
 
         cell index =
@@ -201,17 +192,28 @@ view board =
                     , onClick (MarkCell index activePlayer)
                     ]
                 <|
-                    text <|
-                        getMarkAt boardState index
+                    text (getMarkAt boardState index)
+
+        chooseMarkBtn mark =
+            button <|
+                el Box
+                    [ disabled <|
+                        if turn > 0 then
+                            True
+                        else
+                            False
+                    , onClick (ChooseMark mark)
+                    ]
+                    (text mark)
     in
         Element.root stylesheet <|
             column Main
                 [ center, width (px 800), spacing 50, paddingTop 50, paddingBottom 50 ]
                 [ el Label [] (text "Elm Tic-Tac-Toe")
                 , el Label [] (text (toString board))
-                , button <| el Box [ onClick (ChooseMark "X") ] (text "X")
-                , button <| el Box [ onClick (ChooseMark "O") ] (text "O")
-                , button <| el Box [ onClick ResetBoard ] (text "reset board")
+                , chooseMarkBtn "X"
+                , chooseMarkBtn "O"
+                , button <| el Box [ onClick ResetBoard ] (text "Reset Game")
                 , wrappedRow None
                     [ spacingXY 10 10, center ]
                     [ cell 0
