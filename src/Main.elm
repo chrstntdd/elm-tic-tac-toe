@@ -24,7 +24,18 @@ isEven n =
 
 getMarkAt : Array.Array String -> Int -> String
 getMarkAt array index =
-    toString <| get index array
+    case get index array of
+        Just "X" ->
+            "X"
+
+        Just "O" ->
+            "O"
+
+        Nothing ->
+            ""
+
+        _ ->
+            ""
 
 
 isMarked : Array.Array String -> Int -> Bool
