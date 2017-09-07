@@ -11,7 +11,7 @@ import Style.Border as Border
 import Style.Color as Color
 import Style.Font as Font
 import Style.Transition as Transition
-import Maybe exposing (..)
+import String exposing (length)
 
 
 -- Util functions
@@ -101,7 +101,7 @@ type alias Board =
 
 initialModel : Board
 initialModel =
-    { activePlayer = "X"
+    { activePlayer = ""
     , boardState = Array.fromList [ "", "", "", "", "", "", "", "", "" ]
     , selectedMark = ""
     , turn = 0
@@ -127,18 +127,20 @@ update : Msg -> Board -> Board
 update message board =
     case message of
         MarkCell index mark ->
-            if isEven board.turn then
+            if String.contains mark "O" && length board.activePlayer == 1 then
+                { board
+                    | boardState = Array.set index mark board.boardState
+                    , turn = board.turn + 1
+                    , activePlayer = "X"
+                }
+            else if String.contains mark "X" && length board.activePlayer == 1 then
                 { board
                     | boardState = Array.set index mark board.boardState
                     , turn = board.turn + 1
                     , activePlayer = "O"
                 }
             else
-                { board
-                    | boardState = Array.set index mark board.boardState
-                    , turn = board.turn + 1
-                    , activePlayer = "X"
-                }
+                { board | activePlayer = "" }
 
         ChooseMark mark ->
             { board | activePlayer = mark }
