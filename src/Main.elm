@@ -1,6 +1,6 @@
 module Main exposing (..)
 
-import Array
+import Array exposing (get)
 import Color
 import Element exposing (..)
 import Element.Attributes exposing (..)
@@ -11,6 +11,7 @@ import Style.Border as Border
 import Style.Color as Color
 import Style.Font as Font
 import Style.Transition as Transition
+import Maybe exposing (..)
 
 
 -- Util functions
@@ -23,7 +24,26 @@ isEven n =
 
 getMarkAt : Array.Array String -> Int -> String
 getMarkAt array index =
-    toString <| Array.get index array
+    toString <| get index array
+
+
+isMarked : Array.Array String -> Int -> Bool
+isMarked array index =
+    case get index array of
+        Just "X" ->
+            True
+
+        Just "O" ->
+            True
+
+        Just "" ->
+            False
+
+        Nothing ->
+            True
+
+        _ ->
+            True
 
 
 type Styles
@@ -62,7 +82,7 @@ type alias Board =
 
 initialModel : Board
 initialModel =
-    { activePlayer = ""
+    { activePlayer = "X"
     , boardState = Array.fromList [ "", "", "", "", "", "", "", "", "" ]
     , selectedMark = ""
     , turn = 0
@@ -148,7 +168,7 @@ which you can think of as Html with layout, positioning, and spacing built in.
 view : Board -> Html Msg
 view board =
     let
-        { boardState } =
+        { boardState, activePlayer } =
             board
     in
         Element.root stylesheet <|
@@ -161,14 +181,95 @@ view board =
                 , button <| el Box [ onClick ResetBoard ] (text "reset board")
                 , wrappedRow None
                     [ spacingXY 10 10, center ]
-                    [ button <| el Box [ width (px 200), height (px 200), onClick (MarkCell 0 "X") ] <| text <| getMarkAt boardState 0
-                    , button <| el Box [ width (px 200), height (px 200), onClick (MarkCell 1 "O") ] <| text <| getMarkAt boardState 1
-                    , button <| el Box [ width (px 200), height (px 200), onClick (MarkCell 2 "O") ] <| text <| getMarkAt boardState 2
-                    , button <| el Box [ width (px 200), height (px 200), onClick (MarkCell 3 "O") ] <| text <| getMarkAt boardState 3
-                    , button <| el Box [ width (px 200), height (px 200), onClick (MarkCell 4 "O") ] <| text <| getMarkAt boardState 4
-                    , button <| el Box [ width (px 200), height (px 200), onClick (MarkCell 5 "O") ] <| text <| getMarkAt boardState 5
-                    , button <| el Box [ width (px 200), height (px 200), onClick (MarkCell 6 "O") ] <| text <| getMarkAt boardState 6
-                    , button <| el Box [ width (px 200), height (px 200), onClick (MarkCell 7 "O") ] <| text <| getMarkAt boardState 7
-                    , button <| el Box [ width (px 200), height (px 200), onClick (MarkCell 8 "O") ] <| text <| getMarkAt boardState 8
+                    [ button <|
+                        el Box
+                            [ disabled <| isMarked boardState 0
+                            , width (px 200)
+                            , height (px 200)
+                            , onClick (MarkCell 0 activePlayer)
+                            ]
+                        <|
+                            text <|
+                                getMarkAt boardState 0
+                    , button <|
+                        el Box
+                            [ disabled <| isMarked boardState 1
+                            , width (px 200)
+                            , height (px 200)
+                            , onClick (MarkCell 1 activePlayer)
+                            ]
+                        <|
+                            text <|
+                                getMarkAt boardState 1
+                    , button <|
+                        el Box
+                            [ disabled <| isMarked boardState 2
+                            , width (px 200)
+                            , height (px 200)
+                            , onClick (MarkCell 2 activePlayer)
+                            ]
+                        <|
+                            text <|
+                                getMarkAt boardState 2
+                    , button <|
+                        el Box
+                            [ disabled <| isMarked boardState 3
+                            , width (px 200)
+                            , height (px 200)
+                            , onClick (MarkCell 3 activePlayer)
+                            ]
+                        <|
+                            text <|
+                                getMarkAt boardState 3
+                    , button <|
+                        el Box
+                            [ disabled <| isMarked boardState 4
+                            , width (px 200)
+                            , height (px 200)
+                            , onClick (MarkCell 4 activePlayer)
+                            ]
+                        <|
+                            text <|
+                                getMarkAt boardState 4
+                    , button <|
+                        el Box
+                            [ disabled <| isMarked boardState 5
+                            , width (px 200)
+                            , height (px 200)
+                            , onClick (MarkCell 5 activePlayer)
+                            ]
+                        <|
+                            text <|
+                                getMarkAt boardState 5
+                    , button <|
+                        el Box
+                            [ disabled <| isMarked boardState 6
+                            , width (px 200)
+                            , height (px 200)
+                            , onClick (MarkCell 6 activePlayer)
+                            ]
+                        <|
+                            text <|
+                                getMarkAt boardState 6
+                    , button <|
+                        el Box
+                            [ disabled <| isMarked boardState 7
+                            , width (px 200)
+                            , height (px 200)
+                            , onClick (MarkCell 7 activePlayer)
+                            ]
+                        <|
+                            text <|
+                                getMarkAt boardState 7
+                    , button <|
+                        el Box
+                            [ disabled <| isMarked boardState 8
+                            , width (px 200)
+                            , height (px 200)
+                            , onClick (MarkCell 8 activePlayer)
+                            ]
+                        <|
+                            text <|
+                                getMarkAt boardState 8
                     ]
                 ]
