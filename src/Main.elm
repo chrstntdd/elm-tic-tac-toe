@@ -24,6 +24,11 @@ type Styles
     | Label
 
 
+type Mark
+    = X
+    | O
+
+
 main : Program Never Board Msg
 main =
     Html.beginnerProgram
@@ -62,19 +67,25 @@ initialModel =
 
 type Msg
     = MarkCell Int String
+    | ResetBoard
 
 
 
 -- | ChooseMark String
--- | ResetBoard
 -- | DisplayOutcome
 
 
 update : Msg -> Board -> Board
 update message board =
     case message of
-        MarkCell pos mark ->
-            { board | currentBoardState = Array.set pos mark board.currentBoardState, turn = board.turn + 1 }
+        MarkCell index mark ->
+            { board
+                | currentBoardState = Array.set index mark board.currentBoardState
+                , turn = board.turn + 1
+            }
+
+        ResetBoard ->
+            initialModel
 
 
 stylesheet : StyleSheet Styles variation
@@ -114,22 +125,24 @@ stylesheet =
 {-| Our view is made up of `Element`s,
 which you can think of as Html with layout, positioning, and spacing built in.
 -}
+view : a -> Html Msg
 view board =
     Element.root stylesheet <|
         column Main
             [ center, width (px 800), spacing 50, paddingTop 50, paddingBottom 50 ]
             [ el Label [] (text "Elm Tic-Tac-Toe")
             , el Label [] (text (toString board))
+            , button <| el Box [ onClick ResetBoard ] (text "reset board")
             , wrappedRow None
                 [ spacingXY 10 10, center ]
-                [ el Box [ width (px 200), height (px 200), onClick (MarkCell 0 "X") ] empty
-                , el Box [ width (px 200), height (px 200), onClick (MarkCell 1 "O") ] empty
-                , el Box [ width (px 200), height (px 200), onClick (MarkCell 2 "O") ] empty
-                , el Box [ width (px 200), height (px 200), onClick (MarkCell 3 "O") ] empty
-                , el Box [ width (px 200), height (px 200), onClick (MarkCell 4 "O") ] empty
-                , el Box [ width (px 200), height (px 200), onClick (MarkCell 5 "O") ] empty
-                , el Box [ width (px 200), height (px 200), onClick (MarkCell 6 "O") ] empty
-                , el Box [ width (px 200), height (px 200), onClick (MarkCell 7 "O") ] empty
-                , el Box [ width (px 200), height (px 200), onClick (MarkCell 8 "O") ] empty
+                [ button <| el Box [ disabled True, width (px 200), height (px 200), onClick (MarkCell 0 "X") ] empty
+                , button <| el Box [ width (px 200), height (px 200), onClick (MarkCell 1 "O") ] empty
+                , button <| el Box [ width (px 200), height (px 200), onClick (MarkCell 2 "O") ] empty
+                , button <| el Box [ width (px 200), height (px 200), onClick (MarkCell 3 "O") ] empty
+                , button <| el Box [ width (px 200), height (px 200), onClick (MarkCell 4 "O") ] empty
+                , button <| el Box [ width (px 200), height (px 200), onClick (MarkCell 5 "O") ] empty
+                , button <| el Box [ width (px 200), height (px 200), onClick (MarkCell 6 "O") ] empty
+                , button <| el Box [ width (px 200), height (px 200), onClick (MarkCell 7 "O") ] empty
+                , button <| el Box [ width (px 200), height (px 200), onClick (MarkCell 8 "O") ] empty
                 ]
             ]
