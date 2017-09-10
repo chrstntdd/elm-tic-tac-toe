@@ -1,17 +1,17 @@
 module Main exposing (..)
 
-import Array exposing (Array, set, get, slice, toList, fromList, filter, length, map)
-import Color
+import Array exposing (Array, filter, fromList, get, length, map, set, slice, toList)
+import Color exposing (rgba)
 import Element exposing (..)
 import Element.Attributes exposing (..)
-import Html exposing (Html)
 import Element.Events exposing (onClick)
+import Html exposing (Html, footer)
+import String exposing (contains, length)
 import Style exposing (..)
 import Style.Border as Border
 import Style.Color as Color
 import Style.Font as Font
 import Style.Transition as Transition
-import String exposing (length, contains)
 
 
 -- Util functions
@@ -83,6 +83,26 @@ type Styles
     | Main
     | Box
     | Label
+    | Modal
+    | Cell
+    | Footer
+    | Button
+
+
+colors =
+    { fountainBlue = rgba 95 180 203 1
+    , cometPurple = rgba 89 98 119 1
+    , atlantisGreen = rgba 126 208 59 1
+    , webOrange = rgba 239 172 0 1
+    , offWhite = rgba 242 242 242 1
+    }
+
+
+hide on attrs =
+    if on then
+        hidden :: attrs
+    else
+        attrs
 
 
 type Mark
@@ -141,12 +161,12 @@ fullRow rowSlice =
         rowOfO =
             filter isO rowSlice
     in
-        if Array.length rowOfX == 3 then
-            "X"
-        else if Array.length rowOfO == 3 then
-            "O"
-        else
-            ""
+    if Array.length rowOfX == 3 then
+        "X"
+    else if Array.length rowOfO == 3 then
+        "O"
+    else
+        ""
 
 
 checkWin : Array String -> String
@@ -173,24 +193,24 @@ checkWin boardState =
         forwardSlash =
             Array.map maybe (fromList [ get 2 topRow, get 1 midRow, get 0 bottomRow ])
     in
-        if fullRow topRow == "X" || fullRow topRow == "O" then
-            fullRow topRow
-        else if fullRow midRow == "X" || fullRow midRow == "O" then
-            fullRow midRow
-        else if fullRow bottomRow == "X" || fullRow bottomRow == "O" then
-            fullRow bottomRow
-        else if fullRow firstCol == "X" || fullRow firstCol == "O" then
-            fullRow firstCol
-        else if fullRow secondCol == "X" || fullRow secondCol == "O" then
-            fullRow secondCol
-        else if fullRow thirdCol == "X" || fullRow thirdCol == "O" then
-            fullRow thirdCol
-        else if fullRow backSlash == "X" || fullRow backSlash == "O" then
-            fullRow backSlash
-        else if fullRow forwardSlash == "X" || fullRow forwardSlash == "O" then
-            fullRow forwardSlash
-        else
-            ""
+    if fullRow topRow == "X" || fullRow topRow == "O" then
+        fullRow topRow
+    else if fullRow midRow == "X" || fullRow midRow == "O" then
+        fullRow midRow
+    else if fullRow bottomRow == "X" || fullRow bottomRow == "O" then
+        fullRow bottomRow
+    else if fullRow firstCol == "X" || fullRow firstCol == "O" then
+        fullRow firstCol
+    else if fullRow secondCol == "X" || fullRow secondCol == "O" then
+        fullRow secondCol
+    else if fullRow thirdCol == "X" || fullRow thirdCol == "O" then
+        fullRow thirdCol
+    else if fullRow backSlash == "X" || fullRow backSlash == "O" then
+        fullRow backSlash
+    else if fullRow forwardSlash == "X" || fullRow forwardSlash == "O" then
+        fullRow forwardSlash
+    else
+        ""
 
 
 update : Msg -> Board -> Board
@@ -199,34 +219,34 @@ update message board =
         { activePlayer, boardState, turn } =
             board
     in
-        case message of
-            MarkCell index mark ->
-                let
-                    nextBoardState index mark boardState =
-                        set index mark boardState
-                in
-                    if contains mark "O" && String.length activePlayer == 1 then
-                        { board
-                            | boardState = nextBoardState index mark boardState
-                            , turn = turn + 1
-                            , activePlayer = "X"
-                            , winner = checkWin <| nextBoardState index mark boardState
-                        }
-                    else if contains mark "X" && String.length activePlayer == 1 then
-                        { board
-                            | boardState = nextBoardState index mark boardState
-                            , turn = turn + 1
-                            , activePlayer = "O"
-                            , winner = checkWin <| nextBoardState index mark boardState
-                        }
-                    else
-                        { board | activePlayer = "" }
+    case message of
+        MarkCell index mark ->
+            let
+                nextBoardState index mark boardState =
+                    set index mark boardState
+            in
+            if contains mark "O" && String.length activePlayer == 1 then
+                { board
+                    | boardState = nextBoardState index mark boardState
+                    , turn = turn + 1
+                    , activePlayer = "X"
+                    , winner = checkWin <| nextBoardState index mark boardState
+                }
+            else if contains mark "X" && String.length activePlayer == 1 then
+                { board
+                    | boardState = nextBoardState index mark boardState
+                    , turn = turn + 1
+                    , activePlayer = "O"
+                    , winner = checkWin <| nextBoardState index mark boardState
+                }
+            else
+                { board | activePlayer = "" }
 
-            ChooseMark mark ->
-                { board | activePlayer = mark }
+        ChooseMark mark ->
+            { board | activePlayer = mark }
 
-            ResetBoard ->
-                initialModel
+        ResetBoard ->
+            initialModel
 
 
 stylesheet : StyleSheet Styles variation
@@ -236,9 +256,9 @@ stylesheet =
         , style Main
             [ Border.all 1 -- set all border widths to 1 px.
             , Color.text Color.darkCharcoal
-            , Color.background Color.white
+            , Color.background colors.offWhite
             , Color.border Color.lightGrey
-            , Font.typeface [ "helvetica", "arial", "sans-serif" ]
+            , Font.typeface [ "helvetica" ]
             , Font.size 16
             , Font.lineHeight 1.3 -- line height, given as a ratio of current font size.
             ]
@@ -260,6 +280,35 @@ stylesheet =
                 , cursor "pointer"
                 ]
             ]
+        , style Modal
+            [ Transition.all
+            , Color.text Color.black
+            , Color.background colors.fountainBlue
+            , Color.border Color.grey
+            ]
+        , style Cell
+            [ Transition.all
+            , Color.text colors.cometPurple
+            , Color.background colors.fountainBlue
+            , Color.border colors.atlantisGreen
+            , Font.size 26
+            , cursor "pointer"
+            ]
+        , style Footer
+            [ Transition.all
+            , Color.background colors.atlantisGreen
+            ]
+        , style Button
+            [ Transition.all
+            , Color.background colors.webOrange
+            , Border.rounded 3
+            , Color.text Color.white
+            , Color.border colors.webOrange
+            , paddingHint 20
+            , hover
+                [ Color.text colors.atlantisGreen
+                ]
+            ]
         ]
 
 
@@ -274,18 +323,17 @@ view board =
 
         cell index =
             button <|
-                el Box
-                    [ disabled <| isMarked boardState index || not (String.isEmpty winner)
+                el Cell
+                    [ disabled <| isMarked boardState index || not (String.isEmpty winner) || activePlayer == ""
                     , width (px 200)
                     , height (px 200)
                     , onClick (MarkCell index activePlayer)
                     ]
-                <|
-                    text (getMarkAt boardState index)
+                    (getMarkAt boardState index |> text)
 
         chooseMarkBtn mark =
             button <|
-                el Box
+                el Button
                     [ disabled <|
                         if turn > 0 then
                             True
@@ -293,26 +341,53 @@ view board =
                             False
                     , onClick (ChooseMark mark)
                     ]
-                    (text mark)
+                    (mark |> text)
     in
-        Element.root stylesheet <|
-            column Main
-                [ center, width (px 800), spacing 50, paddingTop 50, paddingBottom 50 ]
-                [ el Label [] (text "Elm Tic-Tac-Toe")
-                , el Label [] (text (toString board))
-                , chooseMarkBtn "X"
+    Element.viewport stylesheet <|
+        column Main
+            [ center, spacingXY 0 10, height (percent 100), width (fill 100) ]
+            [ header <| el Label [] ("Elm Tic-Tac-Toe" |> text)
+            , row None
+                [ spacing 20 ]
+                [ chooseMarkBtn "X"
                 , chooseMarkBtn "O"
-                , button <| el Box [ onClick ResetBoard ] (text "Reset Game")
-                , wrappedRow None
-                    [ spacingXY 10 10, center ]
-                    [ cell 0
-                    , cell 1
-                    , cell 2
-                    , cell 3
-                    , cell 4
-                    , cell 5
-                    , cell 6
-                    , cell 7
-                    , cell 8
-                    ]
                 ]
+            , column Modal
+                [ width (percent 80), height (percent 60) ]
+                [ el None [ center ] ("The winner is" |> text)
+                , el None [ center ] (winner |> text)
+                , button <| el Button [ onClick ResetBoard, vary hidden False ] ("Reset Game" |> text)
+                ]
+            , section <|
+                column None
+                    [ spacingXY 0 10, center, verticalCenter ]
+                    [ row None
+                        [ spacingXY 10 0 ]
+                        [ cell 0
+                        , cell 1
+                        , cell 2
+                        ]
+                    , row None
+                        [ spacingXY 10 0 ]
+                        [ cell 3
+                        , cell 4
+                        , cell 5
+                        ]
+                    , row None
+                        [ spacingXY 10 0 ]
+                        [ cell 6
+                        , cell 7
+                        , cell 8
+                        ]
+                    ]
+            , column Footer
+                [ alignBottom, padding 10, width (percent 100), center ]
+                [ el None
+                    []
+                    (text "All of the code for this game was written in Elm")
+                , link
+                    "https://github.com/chrstntdd/elm-tic-tac-toe"
+                  <|
+                    el None [ center ] (text "Check it out here")
+                ]
+            ]
