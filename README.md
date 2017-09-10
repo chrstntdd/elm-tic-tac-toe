@@ -20,4 +20,4 @@ Just an attempt to learn more about Elm. Throwing this together for fun. Try new
 
     `elm-reactor`
 
-4. Open browser and navigate to `http://localhost:8000`
+4. Open browser and navigate to `http://localhost:8000/src/Main.elm`
