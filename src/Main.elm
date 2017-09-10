@@ -209,6 +209,8 @@ checkWin boardState =
         fullRow backSlash
     else if fullRow forwardSlash == "X" || fullRow forwardSlash == "O" then
         fullRow forwardSlash
+    else if Array.length (Array.filter (\mark -> mark == "") boardState) == 0 then
+        "Nobody!"
     else
         ""
 
