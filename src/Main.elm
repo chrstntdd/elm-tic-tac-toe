@@ -87,6 +87,7 @@ type Styles
     | Cell
     | Footer
     | Button
+    | Link
 
 
 colors =
@@ -96,18 +97,6 @@ colors =
     , webOrange = rgba 239 172 0 1
     , offWhite = rgba 242 242 242 1
     }
-
-
-hide on attrs =
-    if on then
-        hidden :: attrs
-    else
-        attrs
-
-
-type Mark
-    = X
-    | O
 
 
 main : Program Never Board Msg
@@ -129,6 +118,7 @@ type alias Board =
     , selectedMark : String
     , turn : Int
     , winner : String
+    , showModal : Bool
     }
 
 
@@ -139,6 +129,7 @@ initialModel =
     , selectedMark = ""
     , turn = 0
     , winner = ""
+    , showModal = True
     }
 
 
@@ -245,7 +236,10 @@ update message board =
                 { board | activePlayer = "" }
 
         ChooseMark mark ->
-            { board | activePlayer = mark }
+            { board
+                | activePlayer = mark
+                , showModal = False
+            }
 
         ResetBoard ->
             initialModel
@@ -287,6 +281,8 @@ stylesheet =
             , Color.text Color.black
             , Color.background colors.fountainBlue
             , Color.border Color.grey
+            , Style.prop "z-index" "1"
+            , Style.prop "position" "absolute"
             ]
         , style Cell
             [ Transition.all
@@ -299,6 +295,8 @@ stylesheet =
         , style Footer
             [ Transition.all
             , Color.background colors.atlantisGreen
+            , Font.typeface [ "helvetica" ]
+            , Font.size 16
             ]
         , style Button
             [ Transition.all
@@ -311,6 +309,10 @@ stylesheet =
                 [ Color.text colors.atlantisGreen
                 ]
             ]
+        , style Link
+            [ Transition.all
+            , Color.text colors.cometPurple
+            ]
         ]
 
 
@@ -320,15 +322,15 @@ which you can think of as Html with layout, positioning, and spacing built in.
 view : Board -> Html Msg
 view board =
     let
-        { boardState, activePlayer, turn, winner } =
+        { boardState, activePlayer, turn, winner, showModal } =
             board
 
         cell index =
             button <|
                 el Cell
                     [ disabled <| isMarked boardState index || not (String.isEmpty winner) || activePlayer == ""
-                    , width (px 200)
-                    , height (px 200)
+                    , width (px 150)
+                    , height (px 150)
                     , onClick (MarkCell index activePlayer)
                     ]
                     (getMarkAt boardState index |> text)
@@ -348,18 +350,34 @@ view board =
     Element.viewport stylesheet <|
         column Main
             [ center, spacingXY 0 10, height (percent 100), width (fill 100) ]
-            [ header <| el Label [] ("Elm Tic-Tac-Toe" |> text)
-            , row None
-                [ spacing 20 ]
-                [ chooseMarkBtn "X"
-                , chooseMarkBtn "O"
-                ]
-            , column Modal
-                [ width (percent 80), height (percent 60) ]
-                [ el None [ center ] ("The winner is" |> text)
-                , el None [ center ] (winner |> text)
-                , button <| el Button [ onClick ResetBoard, vary hidden False ] ("Reset Game" |> text)
-                ]
+            [ header <| el Label [] (text "Elm Tic-Tac-Toe")
+            , when showModal
+                (column Modal
+                    [ width (percent 80), height (percent 60), center, verticalCenter ]
+                    [ when (turn == 0)
+                        (column None
+                            [ spacingXY 20 20 ]
+                            [ row None
+                                [ spacing 20, center ]
+                                [ el None [] (text "Whom goes first?")
+                                ]
+                            , row None
+                                [ center, spacingXY 10 10 ]
+                                [ chooseMarkBtn "X"
+                                , chooseMarkBtn "O"
+                                ]
+                            ]
+                        )
+                    , when (not (String.isEmpty winner))
+                        (column None
+                            []
+                            [ el None [ center ] (text "The winner is")
+                            , el None [ center ] (text winner)
+                            , button <| el Button [ onClick ResetBoard, width (percent 25), center ] (text "Reset Game")
+                            ]
+                        )
+                    ]
+                )
             , section <|
                 column None
                     [ spacingXY 0 10, center, verticalCenter ]
@@ -382,14 +400,15 @@ view board =
                         , cell 8
                         ]
                     ]
-            , column Footer
-                [ alignBottom, padding 10, width (percent 100), center ]
-                [ el None
-                    []
-                    (text "All of the code for this game was written in Elm")
-                , link
-                    "https://github.com/chrstntdd/elm-tic-tac-toe"
-                  <|
-                    el None [ center ] (text "Check it out here")
-                ]
+            , screen <|
+                column Footer
+                    [ alignBottom, padding 10, width (percent 100), center ]
+                    [ el None
+                        []
+                        (text "All of the code for this game was written in Elm")
+                    , link
+                        "https://github.com/chrstntdd/elm-tic-tac-toe"
+                      <|
+                        el Link [ center ] (text "Check it out here")
+                    ]
             ]
