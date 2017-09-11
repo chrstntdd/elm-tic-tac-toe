@@ -1,69 +1,59 @@
 module Main exposing (..)
 
-import Array exposing (Array, filter, fromList, get, length, map, set, slice, toList)
-import Color exposing (rgba)
+import Array exposing (Array, filter, fromList, get, length, map, set, slice)
 import Element exposing (..)
 import Element.Attributes exposing (..)
 import Element.Events exposing (onClick)
 import Html exposing (Html, footer)
 import MyStyles exposing (..)
-import String exposing (contains, length)
-import Style exposing (..)
-import Style.Border as Border
-import Style.Color as Color
-import Style.Font as Font
-import Style.Transition as Transition
 
 
 -- Util functions
 
 
-getMarkAt : Array String -> Int -> String
+getMarkAt : Array Mark -> Int -> Mark
 getMarkAt array index =
     case get index array of
-        Just "X" ->
-            "X"
+        Just X ->
+            X
 
-        Just "O" ->
-            "O"
+        Just O ->
+            O
 
         Nothing ->
-            ""
+            Empty
 
         _ ->
-            ""
+            Empty
 
 
-isMarked : Array String -> Int -> Bool
+isMarked : Array Mark -> Int -> Bool
 isMarked array index =
     case get index array of
-        Just "X" ->
+        Just X ->
             True
 
-        Just "O" ->
+        Just O ->
             True
 
-        Just "" ->
+        Just Empty ->
             False
 
         Nothing ->
             True
 
-        _ ->
-            True
 
-
-isX : String -> Bool
+isX : Mark -> Bool
 isX mark =
-    if mark == "X" then
+    if mark == X then
         True
     else
         False
 
 
-isO : String -> Bool
+isO : Mark -> Bool
 isO mark =
-    if mark == "O" then
+    if mark == O then
         True
     else
         False
@@ -77,6 +67,16 @@ maybe maybeA =
 
         Nothing ->
             Debug.crash "Can't unwrap that maybe"
+
+
+
+-- MODEL
+
+
+type Mark
+    = X
+    | O
+    | Empty
 
 
 main : Program Never Board Msg
@@ -93,22 +93,22 @@ main =
 
 
 type alias Board =
-    { activePlayer : String
-    , boardState : Array String
-    , selectedMark : String
+    { activePlayer : Mark
+    , boardState : Array Mark
+    , selectedMark : Mark
     , turn : Int
-    , winner : String
+    , winner : Mark
     , showModal : Bool
     }
 
 
 initialModel : Board
 initialModel =
-    { activePlayer = ""
-    , boardState = fromList [ "", "", "", "", "", "", "", "", "" ]
-    , selectedMark = ""
+    { activePlayer = Empty
+    , boardState = Array.repeat 9 Empty
+    , selectedMark = Empty
     , turn = 0
-    , winner = ""
+    , winner = Empty
     , showModal = True
     }
 
@@ -118,12 +118,12 @@ initialModel =
 
 
 type Msg
-    = MarkCell Int String
+    = MarkCell Int Mark
     | ResetBoard
-    | ChooseMark String
+    | ChooseMark Mark
 
 
-fullRow : Array String -> String
+fullRow : Array Mark -> Mark
 fullRow rowSlice =
     let
         rowOfX =
@@ -133,24 +133,24 @@ fullRow rowSlice =
             filter isO rowSlice
     in
     if Array.length rowOfX == 3 then
-        "X"
+        X
     else if Array.length rowOfO == 3 then
-        "O"
+        O
     else
-        ""
+        Empty
 
 
-toggleModal : Array String -> String -> Bool
+toggleModal : Array Mark -> Mark -> Bool
 toggleModal boardState winner =
-    if Array.length (Array.filter (\mark -> mark == "") boardState) == 0 then
+    if Array.length (Array.filter (\mark -> mark == Empty) boardState) == 0 then
         True
-    else if winner == "X" || winner == "O" || winner == "Nobody" then
+    else if winner == X || winner == O then
         True
     else
         False
 
 
-checkWin : Array String -> String
+checkWin : Array Mark -> Mark
 checkWin boardState =
     let
         boardTuple =
@@ -174,26 +174,26 @@ checkWin boardState =
         forwardSlash =
             Array.map maybe (fromList [ get 2 topRow, get 1 midRow, get 0 bottomRow ])
     in
-    if fullRow topRow == "X" || fullRow topRow == "O" then
+    if fullRow topRow == X || fullRow topRow == O then
         fullRow topRow
-    else if fullRow midRow == "X" || fullRow midRow == "O" then
+    else if fullRow midRow == X || fullRow midRow == O then
         fullRow midRow
-    else if fullRow bottomRow == "X" || fullRow bottomRow == "O" then
+    else if fullRow bottomRow == X || fullRow bottomRow == O then
         fullRow bottomRow
-    else if fullRow firstCol == "X" || fullRow firstCol == "O" then
+    else if fullRow firstCol == X || fullRow firstCol == O then
         fullRow firstCol
-    else if fullRow secondCol == "X" || fullRow secondCol == "O" then
+    else if fullRow secondCol == X || fullRow secondCol == O then
         fullRow secondCol
-    else if fullRow thirdCol == "X" || fullRow thirdCol == "O" then
+    else if fullRow thirdCol == X || fullRow thirdCol == O then
         fullRow thirdCol
-    else if fullRow backSlash == "X" || fullRow backSlash == "O" then
+    else if fullRow backSlash == X || fullRow backSlash == O then
         fullRow backSlash
-    else if fullRow forwardSlash == "X" || fullRow forwardSlash == "O" then
+    else if fullRow forwardSlash == X || fullRow forwardSlash == O then
         fullRow forwardSlash
-    else if Array.length (Array.filter (\mark -> mark == "") boardState) == 0 then
-        "Nobody!"
+    else if Array.length (Array.filter (\mark -> mark == Empty) boardState) == 0 then
+        Empty
     else
-        ""
+        Empty
 
 
 update : Msg -> Board -> Board
@@ -211,24 +211,24 @@ update message board =
                 theWinner =
                     checkWin <| nextBoardState index mark boardState
             in
-            if contains mark "O" && String.length activePlayer == 1 then
+            if mark == O && not (activePlayer == Empty) then
                 { board
                     | boardState = nextBoardState index mark boardState
                     , turn = turn + 1
-                    , activePlayer = "X"
+                    , activePlayer = X
                     , winner = theWinner
                     , showModal = toggleModal (nextBoardState index mark boardState) theWinner
                 }
-            else if contains mark "X" && String.length activePlayer == 1 then
+            else if mark == X && not (activePlayer == Empty) then
                 { board
                     | boardState = nextBoardState index mark boardState
                     , turn = turn + 1
-                    , activePlayer = "O"
+                    , activePlayer = O
                     , winner = theWinner
                     , showModal = toggleModal (nextBoardState index mark boardState) theWinner
                 }
             else
-                { board | activePlayer = "" }
+                { board | activePlayer = Empty }
 
         ChooseMark mark ->
             { board
@@ -240,9 +240,22 @@ update message board =
             initialModel
 
 
-{-| Our view is made up of `Element`s,
-which you can think of as Html with layout, positioning, and spacing built in.
--}
+renderMark : Array Mark -> Int -> String
+renderMark boardState index =
+    if getMarkAt boardState index == Empty then
+        ""
+    else
+        getMarkAt boardState index |> toString
+
+
+renderWinner : Mark -> String
+renderWinner winner =
+    if winner == Empty then
+        "Nobody"
+    else
+        winner |> toString
+
+
 view : Board -> Html Msg
 view board =
     let
@@ -252,12 +265,12 @@ view board =
         cell index =
             button <|
                 el Cell
-                    [ disabled <| isMarked boardState index || not (String.isEmpty winner) || activePlayer == ""
+                    [ disabled <| isMarked boardState index || not (winner == Empty) || activePlayer == Empty
                     , width (px 150)
                     , height (px 150)
                     , onClick (MarkCell index activePlayer)
                     ]
-                    (getMarkAt boardState index |> text)
+                    (renderMark boardState index |> text)
 
         chooseMarkBtn mark =
             button <|
@@ -269,7 +282,7 @@ view board =
                             False
                     , onClick (ChooseMark mark)
                     ]
-                    (mark |> text)
+                    (mark |> toString |> text)
     in
     Element.viewport MyStyles.stylesheet <|
         column Main
@@ -287,16 +300,18 @@ view board =
                                 ]
                             , row None
                                 [ center, spacingXY 10 10 ]
-                                [ chooseMarkBtn "X"
-                                , chooseMarkBtn "O"
+                                [ chooseMarkBtn X
+                                , chooseMarkBtn O
                                 ]
                             ]
                         )
-                    , when (not (String.isEmpty winner))
+
+                    -- game results
+                    , when (not (winner == Empty) || turn == 9)
                         (column None
-                            [ width (percent 50) ]
+                            [ width (percent 50), spacingXY 0 20 ]
                             [ el None [ center ] (text "The winner is")
-                            , el None [ center ] (text winner)
+                            , el None [ center ] (winner |> renderWinner |> text)
                             , button <| el Button [ onClick ResetBoard, width (percent 25), center ] (text "Reset Game")
                             ]
                         )
