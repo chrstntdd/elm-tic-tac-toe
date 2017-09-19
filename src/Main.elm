@@ -95,7 +95,7 @@ main =
 type alias Board =
     { activePlayer : Mark
     , humanPlayer : Mark
-    , aiPlayer = Mark
+    , aiPlayer : Mark
     , boardState : Array Mark
     , turn : Int
     , winner : Mark
@@ -108,8 +108,9 @@ initialModel =
     { activePlayer = Empty
     , humanPlayer = O
     , aiPlayer = X
+
     -- , boardState = Array.repeat 9 Empty
-    , boardState = fromList [O, Empty, X, X, Empty, X, Empty, O, O]
+    , boardState = fromList [ O, Empty, X, X, Empty, X, Empty, O, O ]
     , turn = 0
     , winner = Empty
     , showModal = True
@@ -143,35 +144,31 @@ fullRow rowSlice =
         Empty
 
 
-emptyIndexes : Array Mark -> List Int
+emptyIndexes : Array Mark -> Array Mark
 emptyIndexes boardState =
     Array.filter (\mark -> mark == Empty) boardState
 
 
-minimax boardState mark =
-    let
-        availSpots = emptyIndexes boardState
-    in
-        if winning newBoard huPlayer then
-            {score = -10}
-        else if winning newBoard aiPlayer then
-            {score = 10}
-        else if availSpots == 0 then
-            {score = 0}
 
-    
-
-        {-
-         map over all empty spots
-         for each empty spot, create a move record
-        -}
-
-
+-- minimax boardState mark =
+--     let
+--         availSpots = emptyIndexes boardState
+--     in
+--         if winning newBoard huPlayer then
+--             {score = -10}
+--         else if winning newBoard aiPlayer then
+--             {score = 10}
+--         else if availSpots == 0 then
+--             {score = 0}
+{-
+   map over all empty spots
+   for each empty spot, create a move record
+-}
 
 
 toggleModal : Array Mark -> Mark -> Bool
-toggleModal boardState winner =
-    if emptyIndexes boardState == 0 then
+toggleModal board winner =
+    if Array.length (emptyIndexes board) == 0 then
         True
     else if winner == X || winner == O then
         True
@@ -179,11 +176,11 @@ toggleModal boardState winner =
         False
 
 
-checkWin : Array Mark -> Mark
-checkWin boardState =
+checkWin : Array Mark -> Mark -> Bool
+checkWin board mark =
     let
         boardTuple =
-            ( slice 0 3 boardState, slice 3 6 boardState, slice 6 9 boardState )
+            ( slice 0 3 board, slice 3 6 board, slice 6 9 board )
 
         ( topRow, midRow, bottomRow ) =
             boardTuple
@@ -203,26 +200,14 @@ checkWin boardState =
         forwardSlash =
             Array.map maybe (fromList [ get 2 topRow, get 1 midRow, get 0 bottomRow ])
     in
-    if fullRow topRow == X || fullRow topRow == O then
-        fullRow topRow
-    else if fullRow midRow == X || fullRow midRow == O then
-        fullRow midRow
-    else if fullRow bottomRow == X || fullRow bottomRow == O then
-        fullRow bottomRow
-    else if fullRow firstCol == X || fullRow firstCol == O then
-        fullRow firstCol
-    else if fullRow secondCol == X || fullRow secondCol == O then
-        fullRow secondCol
-    else if fullRow thirdCol == X || fullRow thirdCol == O then
-        fullRow thirdCol
-    else if fullRow backSlash == X || fullRow backSlash == O then
-        fullRow backSlash
-    else if fullRow forwardSlash == X || fullRow forwardSlash == O then
-        fullRow forwardSlash
-    else if Array.length (Array.filter (\mark -> mark == Empty) boardState) == 0 then
-        Empty
+    if fullRow topRow == mark || fullRow midRow == mark || fullRow bottomRow == mark then
+        True
+    else if fullRow firstCol == mark || fullRow secondCol == mark || fullRow thirdCol == mark then
+        True
+    else if fullRow backSlash == mark || fullRow forwardSlash == mark then
+        True
     else
-        Empty
+        False
 
 
 update : Msg -> Board -> Board
@@ -238,7 +223,10 @@ update message board =
                     set index mark boardState
 
                 theWinner =
-                    checkWin <| nextBoardState index mark boardState
+                    if checkWin (nextBoardState index mark boardState) mark then
+                        mark
+                    else
+                        Empty
             in
             if mark == O && not (activePlayer == Empty) then
                 { board
@@ -262,7 +250,7 @@ update message board =
         ChooseMark mark ->
             { board
                 | activePlayer = mark
-                | humanPlayer = mark
+                , humanPlayer = mark
                 , showModal = False
             }
 
