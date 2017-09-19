@@ -18,8 +18,10 @@ type Styles
     | Footer
     | Button
     | Link
+    | GameContainer
 
 
+colors : { atlantisGreen : Color.Color, fountainBlue : Color.Color, offWhite : Color.Color, webOrange : Color.Color, cometPurple : Color.Color }
 colors =
     { fountainBlue = rgba 95 180 203 1
     , cometPurple = rgba 89 98 119 1
@@ -73,6 +75,7 @@ stylesheet =
             , Color.text colors.cometPurple
             , Color.background colors.fountainBlue
             , Color.border colors.atlantisGreen
+            , Border.rounded 3
             , Font.size 26
             , cursor "pointer"
             ]
@@ -96,5 +99,8 @@ stylesheet =
         , style Link
             [ Transition.all
             , Color.text colors.cometPurple
+            ]
+        , style GameContainer
+            [ Color.background Color.red
             ]
         ]

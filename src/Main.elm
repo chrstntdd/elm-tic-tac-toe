@@ -94,8 +94,9 @@ main =
 
 type alias Board =
     { activePlayer : Mark
+    , humanPlayer : Mark
+    , aiPlayer = Mark
     , boardState : Array Mark
-    , selectedMark : Mark
     , turn : Int
     , winner : Mark
     , showModal : Bool
@@ -105,8 +106,10 @@ type alias Board =
 initialModel : Board
 initialModel =
     { activePlayer = Empty
-    , boardState = Array.repeat 9 Empty
-    , selectedMark = Empty
+    , humanPlayer = O
+    , aiPlayer = X
+    -- , boardState = Array.repeat 9 Empty
+    , boardState = fromList [O, Empty, X, X, Empty, X, Empty, O, O]
     , turn = 0
     , winner = Empty
     , showModal = True
@@ -140,9 +143,35 @@ fullRow rowSlice =
         Empty
 
 
+emptyIndexes : Array Mark -> List Int
+emptyIndexes boardState =
+    Array.filter (\mark -> mark == Empty) boardState
+
+
+minimax boardState mark =
+    let
+        availSpots = emptyIndexes boardState
+    in
+        if winning newBoard huPlayer then
+            {score = -10}
+        else if winning newBoard aiPlayer then
+            {score = 10}
+        else if availSpots == 0 then
+            {score = 0}
+
+    
+
+        {-
+         map over all empty spots
+         for each empty spot, create a move record
+        -}
+
+
+
+
 toggleModal : Array Mark -> Mark -> Bool
 toggleModal boardState winner =
-    if Array.length (Array.filter (\mark -> mark == Empty) boardState) == 0 then
+    if emptyIndexes boardState == 0 then
         True
     else if winner == X || winner == O then
         True
@@ -233,6 +262,7 @@ update message board =
         ChooseMark mark ->
             { board
                 | activePlayer = mark
+                | humanPlayer = mark
                 , showModal = False
             }
 
@@ -251,7 +281,7 @@ renderMark boardState index =
 renderWinner : Mark -> String
 renderWinner winner =
     if winner == Empty then
-        "Nobody"
+        "Nobody!"
     else
         winner |> toString
 
@@ -285,69 +315,74 @@ view board =
                     (mark |> toString |> text)
     in
     Element.viewport MyStyles.stylesheet <|
-        column Main
-            [ center, spacingXY 0 10, height (percent 100), width (fill 100) ]
-            [ header <| el Label [] (text "Elm Tic-Tac-Toe")
-            , when showModal
-                (column Modal
-                    [ width (percent 80), height (percent 60), center, verticalCenter ]
-                    [ when (turn == 0)
-                        (column None
-                            [ spacingXY 20 20 ]
+        el None
+            [ height (fill 100), width (fill 100), center ]
+            (column Main
+                [ center, spacingXY 0 10, height (fill 100), width (fill 100) ]
+                [ header <| el Label [ center ] (text "Elm Tic-Tac-Toe")
+                , when showModal
+                    (column Modal
+                        [ width (percent 100), height (percent 100), center, verticalCenter ]
+                        [ when (turn == 0)
+                            (column None
+                                [ spacingXY 20 20 ]
+                                [ row None
+                                    [ spacing 20, center ]
+                                    [ el None [] (text "Whom goes first?")
+                                    ]
+                                , row None
+                                    [ center, spacingXY 10 10 ]
+                                    [ chooseMarkBtn X
+                                    , chooseMarkBtn O
+                                    ]
+                                ]
+                            )
+
+                        -- game results
+                        , when (not (winner == Empty) || turn == 9)
+                            (column None
+                                [ width (percent 50), spacingXY 0 20 ]
+                                [ el None [ center ] (text "The winner is: ")
+                                , el None [ center ] (winner |> renderWinner |> text)
+                                , button <| el Button [ onClick ResetBoard, width (percent 50), center ] (text "Reset Game")
+                                ]
+                            )
+                        ]
+                    )
+                , when (not showModal)
+                    (section <|
+                        column None
+                            [ spacingXY 0 10, center, verticalCenter ]
                             [ row None
-                                [ spacing 20, center ]
-                                [ el None [] (text "Whom goes first?")
+                                [ spacingXY 10 0 ]
+                                [ cell 0
+                                , cell 1
+                                , cell 2
                                 ]
                             , row None
-                                [ center, spacingXY 10 10 ]
-                                [ chooseMarkBtn X
-                                , chooseMarkBtn O
+                                [ spacingXY 10 0 ]
+                                [ cell 3
+                                , cell 4
+                                , cell 5
+                                ]
+                            , row None
+                                [ spacingXY 10 0 ]
+                                [ cell 6
+                                , cell 7
+                                , cell 8
                                 ]
                             ]
-                        )
-
-                    -- game results
-                    , when (not (winner == Empty) || turn == 9)
-                        (column None
-                            [ width (percent 50), spacingXY 0 20 ]
-                            [ el None [ center ] (text "The winner is")
-                            , el None [ center ] (winner |> renderWinner |> text)
-                            , button <| el Button [ onClick ResetBoard, width (percent 25), center ] (text "Reset Game")
-                            ]
-                        )
-                    ]
-                )
-            , section <|
-                column None
-                    [ spacingXY 0 10, center, verticalCenter ]
-                    [ row None
-                        [ spacingXY 10 0 ]
-                        [ cell 0
-                        , cell 1
-                        , cell 2
+                    )
+                , screen <|
+                    column Footer
+                        [ alignBottom, padding 10, width (percent 100), center ]
+                        [ el None
+                            []
+                            (text "All of the code for this game was written in Elm")
+                        , link
+                            "https://github.com/chrstntdd/elm-tic-tac-toe"
+                          <|
+                            el Link [ center ] (text "Check it out here")
                         ]
-                    , row None
-                        [ spacingXY 10 0 ]
-                        [ cell 3
-                        , cell 4
-                        , cell 5
-                        ]
-                    , row None
-                        [ spacingXY 10 0 ]
-                        [ cell 6
-                        , cell 7
-                        , cell 8
-                        ]
-                    ]
-            , screen <|
-                column Footer
-                    [ alignBottom, padding 10, width (percent 100), center ]
-                    [ el None
-                        []
-                        (text "All of the code for this game was written in Elm")
-                    , link
-                        "https://github.com/chrstntdd/elm-tic-tac-toe"
-                      <|
-                        el Link [ center ] (text "Check it out here")
-                    ]
-            ]
+                ]
+            )
