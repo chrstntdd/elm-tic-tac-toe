@@ -1,11 +1,12 @@
 module Main exposing (..)
 
-import Array exposing (Array, filter, fromList, get, length, map, set, slice)
+import Array exposing (Array, filter, fromList, get, length, map, set, slice, toList)
 import Element exposing (..)
 import Element.Attributes exposing (..)
 import Element.Events exposing (onClick)
 import Html exposing (Html, footer)
 import MyStyles exposing (..)
+import Tuple exposing (first, second)
 
 
 -- Util functions
@@ -144,31 +145,100 @@ fullRow rowSlice =
         Empty
 
 
-emptyIndexes : Array Mark -> Array Mark
+
+-- sets mark then returns updated board state
+
+
+setMark : Mark -> Int -> Array Mark -> Array Mark
+setMark mark index boardState =
+    boardState
+        |> Array.set index mark
+
+
+
+-- used to flip the active player to the inverse of the mark param
+
+
+newPlayer : Mark -> Mark
+newPlayer mark =
+    if mark == X then
+        O
+    else if mark == O then
+        X
+    else
+        Empty
+
+
+
+-- create a list of all possible moves according to the current board state
+
+
+moves : Array Int -> Mark -> Array Mark -> Array (Array Mark)
+moves availableSpaces mark boardState =
+    availableSpaces
+        |> Array.map (\index -> setMark mark index boardState)
+
+
+isEmpty : ( Int, Mark ) -> Bool
+isEmpty position =
+    if second position == Empty then
+        True
+    else
+        False
+
+
+
+-- this function will assign values to terminal states based on the winner
+
+
+terminalHeuristic : Array Mark -> Mark -> Mark -> Mark -> { score : Int }
+terminalHeuristic boardState mark aiPlayer humanPlayer =
+    if checkWin boardState aiPlayer then
+        { score = 10 }
+    else if checkWin boardState humanPlayer then
+        { score = -10 }
+    else if Array.length (availableSpaces boardState) == 0 then
+        { score = 0 }
+    else
+        { score = 0 }
+
+
+
+-- return list if integers representing empty indexes in the boardState param
+
+
+availableSpaces : Array Mark -> Array Int
+availableSpaces boardState =
+    boardState
+        |> emptyIndexes
+        |> fromList
+
+
+
+-- We will use this function to hold onto the empty indexes for easy retrieval within minimax
+
+
+emptyIndexes : Array Mark -> List Int
 emptyIndexes boardState =
-    Array.filter (\mark -> mark == Empty) boardState
+    boardState
+        |> toList
+        |> List.indexedMap (,)
+        |> List.filter isEmpty
+        |> List.map first
 
 
-
--- minimax boardState mark =
---     let
---         availSpots = emptyIndexes boardState
---     in
---         if winning newBoard huPlayer then
---             {score = -10}
---         else if winning newBoard aiPlayer then
---             {score = 10}
---         else if availSpots == 0 then
---             {score = 0}
-{-
-   map over all empty spots
-   for each empty spot, create a move record
--}
+miniMax boardState mark humanPlayer aiPlayer =
+    let
+        returnScore =
+            terminalHeuristic boardState mark aiPlayer humanPlayer
+    in
+    moves (availableSpaces boardState) mark boardState
+        |> Array.map (\board -> { mark = mark, score = miniMax board (newPlayer mark) humanPlayer aiPlayer })
 
 
 toggleModal : Array Mark -> Mark -> Bool
 toggleModal board winner =
-    if Array.length (emptyIndexes board) == 0 then
+    if List.length (emptyIndexes board) == 0 then
         True
     else if winner == X || winner == O then
         True
@@ -177,10 +247,10 @@ toggleModal board winner =
 
 
 checkWin : Array Mark -> Mark -> Bool
-checkWin board mark =
+checkWin boardState mark =
     let
         boardTuple =
-            ( slice 0 3 board, slice 3 6 board, slice 6 9 board )
+            ( slice 0 3 boardState, slice 3 6 boardState, slice 6 9 boardState )
 
         ( topRow, midRow, bottomRow ) =
             boardTuple
@@ -219,30 +289,27 @@ update message board =
     case message of
         MarkCell index mark ->
             let
-                nextBoardState index mark boardState =
-                    set index mark boardState
-
                 theWinner =
-                    if checkWin (nextBoardState index mark boardState) mark then
+                    if checkWin (setMark mark index boardState) mark then
                         mark
                     else
                         Empty
             in
             if mark == O && not (activePlayer == Empty) then
                 { board
-                    | boardState = nextBoardState index mark boardState
+                    | boardState = setMark mark index boardState
                     , turn = turn + 1
                     , activePlayer = X
                     , winner = theWinner
-                    , showModal = toggleModal (nextBoardState index mark boardState) theWinner
+                    , showModal = toggleModal (setMark mark index boardState) theWinner
                 }
             else if mark == X && not (activePlayer == Empty) then
                 { board
-                    | boardState = nextBoardState index mark boardState
+                    | boardState = setMark mark index boardState
                     , turn = turn + 1
                     , activePlayer = O
                     , winner = theWinner
-                    , showModal = toggleModal (nextBoardState index mark boardState) theWinner
+                    , showModal = toggleModal (setMark mark index boardState) theWinner
                 }
             else
                 { board | activePlayer = Empty }
