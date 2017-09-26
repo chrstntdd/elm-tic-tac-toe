@@ -9,55 +9,56 @@ import MyStyles exposing (..)
 import Tuple exposing (first, second)
 
 
+main : Program Never Model Msg
+main =
+    Html.beginnerProgram
+        { model = initialModel
+        , view = view
+        , update = update
+        }
+
+
+
 -- Util functions
 
 
-getMarkAt : Array Mark -> Int -> Mark
-getMarkAt array index =
-    case get index array of
-        Just X ->
-            X
+getMark : BoardState -> Int -> Maybe Mark
+getMark boardState index =
+    Array.get index boardState
+        |> Maybe.withDefault Nothing
 
-        Just O ->
-            O
 
-        Nothing ->
-            Empty
+isMarked : BoardState -> Int -> Bool
+isMarked boardState index =
+    case get index boardState of
+        Just (Just X) ->
+            True
+
+        Just (Just O) ->
+            True
 
         _ ->
-            Empty
+            False
 
 
-isMarked : Array Mark -> Int -> Bool
-isMarked array index =
-    case get index array of
+isX : Maybe Mark -> Bool
+isX mark =
+    case mark of
         Just X ->
             True
 
+        _ ->
+            False
+
+
+isO : Maybe Mark -> Bool
+isO mark =
+    case mark of
         Just O ->
             True
 
-        Just Empty ->
+        _ ->
             False
-
-        Nothing ->
-            True
-
-
-isX : Mark -> Bool
-isX mark =
-    if mark == X then
-        True
-    else
-        False
-
-
-isO : Mark -> Bool
-isO mark =
-    if mark == O then
-        True
-    else
-        False
 
 
 maybe : Maybe a -> a
@@ -70,50 +71,40 @@ maybe maybeA =
             Debug.crash "Can't unwrap that maybe"
 
 
-
--- MODEL
-
-
 type Mark
     = X
     | O
-    | Empty
 
 
-main : Program Never Board Msg
-main =
-    Html.beginnerProgram
-        { model = initialModel
-        , view = view
-        , update = update
-        }
+type alias Play =
+    ( Maybe Mark, Int )
+
+
+type alias BoardState =
+    Array (Maybe Mark)
 
 
 
 -- MODEL
 
 
-type alias Board =
-    { activePlayer : Mark
-    , humanPlayer : Mark
-    , aiPlayer : Mark
-    , boardState : Array Mark
+type alias Model =
+    { activePlayer : Maybe Mark
     , turn : Int
-    , winner : Mark
+    , boardState : BoardState
+    , winner : Maybe Mark
     , showModal : Bool
     }
 
 
-initialModel : Board
+initialModel : Model
 initialModel =
-    { activePlayer = Empty
-    , humanPlayer = O
-    , aiPlayer = X
-
-    -- , boardState = Array.repeat 9 Empty
-    , boardState = fromList [ O, Empty, X, X, Empty, X, Empty, O, O ]
+    { activePlayer = Nothing
     , turn = 0
-    , winner = Empty
+
+    -- , boardState = Array.repeat 9 Nothing
+    , boardState = fromList [ Just O, Nothing, Just X, Just X, Nothing, Just X, Nothing, Just O, Just O ]
+    , winner = Nothing
     , showModal = True
     }
 
@@ -123,130 +114,67 @@ initialModel =
 
 
 type Msg
-    = MarkCell Int Mark
+    = MarkCell Play
     | ResetBoard
     | ChooseMark Mark
 
 
-fullRow : Array Mark -> Mark
+fullRow : BoardState -> Maybe Mark
 fullRow rowSlice =
     let
-        rowOfX =
-            filter isX rowSlice
-
-        rowOfO =
-            filter isO rowSlice
+        rowList =
+            rowSlice |> toList
     in
-    if Array.length rowOfX == 3 then
-        X
-    else if Array.length rowOfO == 3 then
-        O
+    if List.all isX rowList then
+        Just X
+    else if List.all isO rowList then
+        Just O
     else
-        Empty
+        Nothing
 
 
 
 -- sets mark then returns updated board state
 
 
-setMark : Mark -> Int -> Array Mark -> Array Mark
-setMark mark index boardState =
-    boardState
-        |> Array.set index mark
+setMark : Play -> Model -> Model
+setMark play model =
+    { model
+        | boardState =
+            model.boardState
+                |> Array.set (second play) (first play)
+        , activePlayer = nextPlayer (maybe (first play))
+    }
 
 
 
 -- used to flip the active player to the inverse of the mark param
 
 
-newPlayer : Mark -> Mark
-newPlayer mark =
-    if mark == X then
-        O
-    else if mark == O then
-        X
-    else
-        Empty
+nextPlayer : Mark -> Maybe Mark
+nextPlayer mark =
+    case mark of
+        X ->
+            Just O
+
+        O ->
+            Just X
 
 
-
--- create a list of all possible moves according to the current board state
-
-
-moves : Array Int -> Mark -> Array Mark -> Array (Array Mark)
-moves availableSpaces mark boardState =
-    availableSpaces
-        |> Array.map (\index -> setMark mark index boardState)
-
-
-isEmpty : ( Int, Mark ) -> Bool
-isEmpty position =
-    if second position == Empty then
-        True
-    else
-        False
-
-
-
--- this function will assign values to terminal states based on the winner
-
-
-terminalHeuristic : Array Mark -> Mark -> Mark -> Mark -> { score : Int }
-terminalHeuristic boardState mark aiPlayer humanPlayer =
-    if checkWin boardState aiPlayer then
-        { score = 10 }
-    else if checkWin boardState humanPlayer then
-        { score = -10 }
-    else if Array.length (availableSpaces boardState) == 0 then
-        { score = 0 }
-    else
-        { score = 0 }
-
-
-
--- return list if integers representing empty indexes in the boardState param
-
-
-availableSpaces : Array Mark -> Array Int
-availableSpaces boardState =
-    boardState
-        |> emptyIndexes
-        |> fromList
-
-
-
--- We will use this function to hold onto the empty indexes for easy retrieval within minimax
-
-
-emptyIndexes : Array Mark -> List Int
-emptyIndexes boardState =
-    boardState
-        |> toList
-        |> List.indexedMap (,)
-        |> List.filter isEmpty
-        |> List.map first
-
-
-miniMax boardState mark humanPlayer aiPlayer =
-    let
-        returnScore =
-            terminalHeuristic boardState mark aiPlayer humanPlayer
-    in
-    moves (availableSpaces boardState) mark boardState
-        |> Array.map (\board -> { mark = mark, score = miniMax board (newPlayer mark) humanPlayer aiPlayer })
-
-
-toggleModal : Array Mark -> Mark -> Bool
+toggleModal : BoardState -> Maybe Mark -> Bool
 toggleModal board winner =
-    if List.length (emptyIndexes board) == 0 then
-        True
-    else if winner == X || winner == O then
-        True
-    else
-        False
+    case winner of
+        Just X ->
+            True
+
+        Just O ->
+            True
+
+        _ ->
+            False
 
 
-checkWin : Array Mark -> Mark -> Bool
+checkWin : BoardState -> Maybe Mark -> Bool
 checkWin boardState mark =
     let
         boardTuple =
@@ -280,44 +208,49 @@ checkWin boardState mark =
         False
 
 
-update : Msg -> Board -> Board
-update message board =
+update : Msg -> Model -> Model
+update message model =
     let
         { activePlayer, boardState, turn } =
-            board
+            model
     in
     case message of
-        MarkCell index mark ->
+        MarkCell ( mark, index ) ->
             let
+                nextGameState =
+                    setMark ( mark, index ) model |> .boardState
+
                 theWinner =
-                    if checkWin (setMark mark index boardState) mark then
+                    if checkWin nextGameState mark then
                         mark
                     else
-                        Empty
+                        Nothing
             in
-            if mark == O && not (activePlayer == Empty) then
-                { board
-                    | boardState = setMark mark index boardState
-                    , turn = turn + 1
-                    , activePlayer = X
-                    , winner = theWinner
-                    , showModal = toggleModal (setMark mark index boardState) theWinner
-                }
-            else if mark == X && not (activePlayer == Empty) then
-                { board
-                    | boardState = setMark mark index boardState
-                    , turn = turn + 1
-                    , activePlayer = O
-                    , winner = theWinner
-                    , showModal = toggleModal (setMark mark index boardState) theWinner
-                }
-            else
-                { board | activePlayer = Empty }
+            case mark of
+                Just O ->
+                    { model
+                        | boardState = nextGameState
+                        , turn = turn + 1
+                        , activePlayer = Just X
+                        , winner = theWinner
+                        , showModal = toggleModal nextGameState theWinner
+                    }
+
+                Just X ->
+                    { model
+                        | boardState = nextGameState
+                        , turn = turn + 1
+                        , activePlayer = Just O
+                        , winner = theWinner
+                        , showModal = toggleModal nextGameState theWinner
+                    }
+
+                _ ->
+                    { model | activePlayer = Nothing }
 
         ChooseMark mark ->
-            { board
-                | activePlayer = mark
-                , humanPlayer = mark
+            { model
+                | activePlayer = Just mark
                 , showModal = False
             }
 
@@ -325,35 +258,52 @@ update message board =
             initialModel
 
 
-renderMark : Array Mark -> Int -> String
+
+-- VIEW
+
+
+renderMark : BoardState -> Int -> String
 renderMark boardState index =
-    if getMarkAt boardState index == Empty then
-        ""
-    else
-        getMarkAt boardState index |> toString
+    case getMark boardState index of
+        Just X ->
+            "X"
+
+        Just O ->
+            "O"
+
+        _ ->
+            ""
 
 
-renderWinner : Mark -> String
+renderWinner : Maybe Mark -> String
 renderWinner winner =
-    if winner == Empty then
-        "Nobody!"
-    else
-        winner |> toString
+    case winner of
+        Just X ->
+            "X"
+
+        Just O ->
+            "O"
+
+        _ ->
+            "Nobody"
 
 
-view : Board -> Html Msg
-view board =
+view : Model -> Html Msg
+view model =
     let
-        { boardState, activePlayer, turn, winner, showModal } =
-            board
+        { boardState, activePlayer, turn, winner } =
+            model
+
+        { showModal } =
+            model
 
         cell index =
             button <|
                 el Cell
-                    [ disabled <| isMarked boardState index || not (winner == Empty) || activePlayer == Empty
+                    [ disabled <| isMarked boardState index
                     , width (px 150)
                     , height (px 150)
-                    , onClick (MarkCell index activePlayer)
+                    , onClick (MarkCell ( activePlayer, index ))
                     ]
                     (renderMark boardState index |> text)
 
@@ -394,7 +344,7 @@ view board =
                             )
 
                         -- game results
-                        , when (not (winner == Empty) || turn == 9)
+                        , when (not (winner == Nothing) || turn == 9)
                             (column None
                                 [ width (percent 50), spacingXY 0 20 ]
                                 [ el None [ center ] (text "The winner is: ")
