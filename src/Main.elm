@@ -28,19 +28,6 @@ getMark boardState index =
         |> Maybe.withDefault Nothing
 
 
-isMarked : BoardState -> Int -> Bool
-isMarked boardState index =
-    case get index boardState of
-        Just (Just X) ->
-            True
-
-        Just (Just O) ->
-            True
-
-        _ ->
-            False
-
-
 isX : Maybe Mark -> Bool
 isX mark =
     case mark of
@@ -300,7 +287,11 @@ view model =
         cell index =
             button <|
                 el Cell
-                    [ disabled <| isMarked boardState index
+                    [ disabled <|
+                        if getMark boardState index == Nothing then
+                            False
+                        else
+                            True
                     , width (px 150)
                     , height (px 150)
                     , onClick (MarkCell ( activePlayer, index ))
