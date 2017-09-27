@@ -6,8 +6,8 @@ Just an attempt to learn more about Elm. Throwing this together for fun. Try new
 
 1. Install all of the Javascript dependencies
 
-    `yarn install` 
-    
+    `yarn install`
+
     or
 
      `npm install`

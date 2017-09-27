@@ -112,12 +112,12 @@ fullRow rowSlice =
         rowList =
             rowSlice |> toList
     in
-    if List.all isX rowList then
-        Just X
-    else if List.all isO rowList then
-        Just O
-    else
-        Nothing
+        if List.all isX rowList then
+            Just X
+        else if List.all isO rowList then
+            Just O
+        else
+            Nothing
 
 
 
@@ -185,14 +185,14 @@ checkWin boardState mark =
         forwardSlash =
             Array.map maybe (fromList [ get 2 topRow, get 1 midRow, get 0 bottomRow ])
     in
-    if fullRow topRow == mark || fullRow midRow == mark || fullRow bottomRow == mark then
-        True
-    else if fullRow firstCol == mark || fullRow secondCol == mark || fullRow thirdCol == mark then
-        True
-    else if fullRow backSlash == mark || fullRow forwardSlash == mark then
-        True
-    else
-        False
+        if fullRow topRow == mark || fullRow midRow == mark || fullRow bottomRow == mark then
+            True
+        else if fullRow firstCol == mark || fullRow secondCol == mark || fullRow thirdCol == mark then
+            True
+        else if fullRow backSlash == mark || fullRow forwardSlash == mark then
+            True
+        else
+            False
 
 
 update : Msg -> Model -> Model
@@ -201,48 +201,48 @@ update message model =
         { activePlayer, boardState, turn } =
             model
     in
-    case message of
-        MarkCell ( mark, index ) ->
-            let
-                nextGameState =
-                    setMark ( mark, index ) model |> .boardState
+        case message of
+            MarkCell ( mark, index ) ->
+                let
+                    nextGameState =
+                        setMark ( mark, index ) model |> .boardState
 
-                theWinner =
-                    if checkWin nextGameState mark then
-                        mark
-                    else
-                        Nothing
-            in
-            case mark of
-                Just O ->
-                    { model
-                        | boardState = nextGameState
-                        , turn = turn + 1
-                        , activePlayer = Just X
-                        , winner = theWinner
-                        , showModal = toggleModal nextGameState theWinner
-                    }
+                    theWinner =
+                        if checkWin nextGameState mark then
+                            mark
+                        else
+                            Nothing
+                in
+                    case mark of
+                        Just O ->
+                            { model
+                                | boardState = nextGameState
+                                , turn = turn + 1
+                                , activePlayer = Just X
+                                , winner = theWinner
+                                , showModal = toggleModal nextGameState theWinner
+                            }
 
-                Just X ->
-                    { model
-                        | boardState = nextGameState
-                        , turn = turn + 1
-                        , activePlayer = Just O
-                        , winner = theWinner
-                        , showModal = toggleModal nextGameState theWinner
-                    }
+                        Just X ->
+                            { model
+                                | boardState = nextGameState
+                                , turn = turn + 1
+                                , activePlayer = Just O
+                                , winner = theWinner
+                                , showModal = toggleModal nextGameState theWinner
+                            }
 
-                _ ->
-                    { model | activePlayer = Nothing }
+                        _ ->
+                            { model | activePlayer = Nothing }
 
-        ChooseMark mark ->
-            { model
-                | activePlayer = Just mark
-                , showModal = False
-            }
+            ChooseMark mark ->
+                { model
+                    | activePlayer = Just mark
+                    , showModal = False
+                }
 
-        ResetBoard ->
-            initialModel
+            ResetBoard ->
+                initialModel
 
 
 
@@ -310,75 +310,75 @@ view model =
                     ]
                     (mark |> toString |> text)
     in
-    Element.viewport MyStyles.stylesheet <|
-        el None
-            [ height (fill 100), width (fill 100), center ]
-            (column Main
-                [ center, spacingXY 0 10, height (fill 100), width (fill 100) ]
-                [ header <| el Label [ center ] (text "Elm Tic-Tac-Toe")
-                , when showModal
-                    (column Modal
-                        [ width (percent 100), height (percent 100), center, verticalCenter ]
-                        [ when (turn == 0)
-                            (column None
-                                [ spacingXY 20 20 ]
+        Element.viewport MyStyles.stylesheet <|
+            el None
+                [ height (fill 100), width (fill 100), center ]
+                (column Main
+                    [ center, spacingXY 0 10, height (fill 100), width (fill 100) ]
+                    [ header <| el Label [ center ] (text "Elm Tic-Tac-Toe")
+                    , when showModal
+                        (column Modal
+                            [ width (percent 100), height (percent 100), center, verticalCenter ]
+                            [ when (turn == 0)
+                                (column None
+                                    [ spacingXY 20 20 ]
+                                    [ row None
+                                        [ spacing 20, center ]
+                                        [ el None [] (text "Whom goes first?")
+                                        ]
+                                    , row None
+                                        [ center, spacingXY 10 10 ]
+                                        [ chooseMarkBtn X
+                                        , chooseMarkBtn O
+                                        ]
+                                    ]
+                                )
+
+                            -- game results
+                            , when (not (winner == Nothing) || turn == 9)
+                                (column None
+                                    [ width (percent 50), spacingXY 0 20 ]
+                                    [ el None [ center ] (text "The winner is: ")
+                                    , el None [ center ] (winner |> renderWinner |> text)
+                                    , button <| el Button [ onClick ResetBoard, width (percent 50), center ] (text "Reset Game")
+                                    ]
+                                )
+                            ]
+                        )
+                    , when (not showModal)
+                        (section <|
+                            column None
+                                [ spacingXY 0 10, center, verticalCenter ]
                                 [ row None
-                                    [ spacing 20, center ]
-                                    [ el None [] (text "Whom goes first?")
+                                    [ spacingXY 10 0 ]
+                                    [ cell 0
+                                    , cell 1
+                                    , cell 2
                                     ]
                                 , row None
-                                    [ center, spacingXY 10 10 ]
-                                    [ chooseMarkBtn X
-                                    , chooseMarkBtn O
+                                    [ spacingXY 10 0 ]
+                                    [ cell 3
+                                    , cell 4
+                                    , cell 5
+                                    ]
+                                , row None
+                                    [ spacingXY 10 0 ]
+                                    [ cell 6
+                                    , cell 7
+                                    , cell 8
                                     ]
                                 ]
-                            )
-
-                        -- game results
-                        , when (not (winner == Nothing) || turn == 9)
-                            (column None
-                                [ width (percent 50), spacingXY 0 20 ]
-                                [ el None [ center ] (text "The winner is: ")
-                                , el None [ center ] (winner |> renderWinner |> text)
-                                , button <| el Button [ onClick ResetBoard, width (percent 50), center ] (text "Reset Game")
-                                ]
-                            )
-                        ]
-                    )
-                , when (not showModal)
-                    (section <|
-                        column None
-                            [ spacingXY 0 10, center, verticalCenter ]
-                            [ row None
-                                [ spacingXY 10 0 ]
-                                [ cell 0
-                                , cell 1
-                                , cell 2
-                                ]
-                            , row None
-                                [ spacingXY 10 0 ]
-                                [ cell 3
-                                , cell 4
-                                , cell 5
-                                ]
-                            , row None
-                                [ spacingXY 10 0 ]
-                                [ cell 6
-                                , cell 7
-                                , cell 8
-                                ]
+                        )
+                    , screen <|
+                        column Footer
+                            [ alignBottom, padding 10, width (percent 100), center ]
+                            [ el None
+                                []
+                                (text "All of the code for this game was written in Elm")
+                            , link
+                                "https://github.com/chrstntdd/elm-tic-tac-toe"
+                              <|
+                                el Link [ center ] (text "Check it out here")
                             ]
-                    )
-                , screen <|
-                    column Footer
-                        [ alignBottom, padding 10, width (percent 100), center ]
-                        [ el None
-                            []
-                            (text "All of the code for this game was written in Elm")
-                        , link
-                            "https://github.com/chrstntdd/elm-tic-tac-toe"
-                          <|
-                            el Link [ center ] (text "Check it out here")
-                        ]
-                ]
-            )
+                    ]
+                )
