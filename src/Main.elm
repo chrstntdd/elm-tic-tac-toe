@@ -1,6 +1,6 @@
 module Main exposing (..)
 
-import Array exposing (Array, filter, fromList, get, length, map, set, slice, toList)
+import Array exposing (Array, fromList, get, map, slice, toList)
 import Element exposing (..)
 import Element.Attributes exposing (..)
 import Element.Events exposing (onClick)
@@ -88,9 +88,10 @@ initialModel : Model
 initialModel =
     { activePlayer = Nothing
     , turn = 0
+    , boardState = Array.repeat 9 Nothing
 
-    -- , boardState = Array.repeat 9 Nothing
-    , boardState = fromList [ Just O, Nothing, Just X, Just X, Nothing, Just X, Nothing, Just O, Just O ]
+    -- near terminal state used for testing
+    -- , boardState = fromList [ Just O, Nothing, Just X, Just X, Nothing, Just X, Nothing, Just O, Just O ]
     , winner = Nothing
     , showModal = True
     }
